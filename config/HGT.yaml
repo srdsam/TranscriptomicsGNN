@@ -1,0 +1,19 @@
+data:
+  input_path: "/hpc/projects/data_lg/samuel.dsouza/tabulaMuris/TabulaMurisBiohub.h5ad"
+  root_path: "/hpc/projects/data_lg/samuel.dsouza/datasets"
+  num_neighbors:
+    - 25
+    - 10
+  num_workers: 4
+  downsample: True
+
+model:
+  architecture: 'HGT'
+  hidden_channels: 32
+  num_layers: 2
+  num_heads: 2
+
+training:
+  epochs: 100
+  early_stopping: True
+  patience: 10

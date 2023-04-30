@@ -1,5 +1,6 @@
 data:
   input_path: "/hpc/projects/data_lg/samuel.dsouza/tabulaMuris/TabulaMurisBiohub.h5ad"
+  root_path: "/hpc/projects/data_lg/samuel.dsouza/datasets"
   num_neighbors:
     - 25
     - 10
@@ -7,9 +8,9 @@ data:
   downsample: True
 
 model:
+  architecture: 'GNN'
   hidden_channels: 32
   num_layers: 2
-  num_heads: 2
 
 training:
   epochs: 100

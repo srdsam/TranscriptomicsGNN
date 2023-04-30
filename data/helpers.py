@@ -2,6 +2,7 @@ import sys
 import torch
 import numpy as np
 import scanpy as sc
+import pytorch_lightning as pl
 from torch_geometric.data import HeteroData
 
 
@@ -51,7 +52,10 @@ def construct_edge_index(adata):
         edge_index (torch.Tensor): The edge index tensor.
     """
     cells, genes = np.nonzero(adata.X)
-    edge_index = torch.tensor([cells, genes + adata.X.shape[0]], dtype=torch.long)
+    # Combine the arrays into a single numpy array
+    combined_numpy_array = np.array([cells, genes + adata.X.shape[0]])
+    # Convert the combined numpy array to a PyTorch tensor
+    edge_index = torch.tensor(combined_numpy_array, dtype=torch.long)
     return edge_index
 
 
@@ -95,6 +99,30 @@ def create_indices(num_cells, train_frac=0.8, val_frac=0.1):
     
     return train_indices, val_indices, test_indices
 
+def create_hetero_data(adata, indices):
+    """
+    Create a PyTorch Geometric HeteroData object from the given indices of an AnnData object.
+
+    Args:
+        indices (numpy.ndarray): Indices of the cells in the AnnData object.
+
+    Returns:
+        data (HeteroData): A PyTorch Geometric HeteroData object.
+    """
+    data = HeteroData()
+
+    # Set the node features
+    data['cell'].x = torch.tensor(adata[indices].X.toarray(), dtype=torch.float)  # Convert sparse matrix to dense numpy array
+    data['gene'].x = torch.tensor(adata.var['n_cells'].values.reshape(-1, 1), dtype=torch.float)
+
+    # Set the edge index
+    data['cell', 'expr', 'gene'].edge_index = construct_edge_index(adata[indices])
+
+    # Set the cell type annotations
+    data['cell'].y = torch.tensor(get_cell_type_annotations(adata[indices]), dtype=torch.long)
+
+    return data
+    
 def h5ad_to_pyg_data(adata, downsample=False):
     """
     Convert an AnnData object to PyTorch Geometric HeteroData objects for training, validation, and testing.
@@ -118,32 +146,9 @@ def h5ad_to_pyg_data(adata, downsample=False):
     # Create the train, validation, and test indices
     train_indices, val_indices, test_indices = create_indices(adata.n_obs)
 
-    def create_hetero_data(indices):
-        """
-        Create a PyTorch Geometric HeteroData object from the given indices of an AnnData object.
-
-        Args:
-            indices (numpy.ndarray): Indices of the cells in the AnnData object.
-
-        Returns:
-            data (HeteroData): A PyTorch Geometric HeteroData object.
-        """
-        data = HeteroData()
-
-        # Set the node features
-        data['cell'].x = torch.tensor(adata[indices].X.toarray(), dtype=torch.float)  # Convert sparse matrix to dense numpy array
-        data['gene'].x = torch.tensor(adata.var['n_cells'].values.reshape(-1, 1), dtype=torch.float)
-
-        # Set the edge index
-        data['cell', 'expr', 'gene'].edge_index = construct_edge_index(adata[indices])
-
-        # Set the cell type annotations
-        data['cell'].y = torch.tensor(get_cell_type_annotations(adata[indices]), dtype=torch.long)
-
-        return data
-
     train_dataset = create_hetero_data(train_indices)
     val_dataset = create_hetero_data(val_indices)
     test_dataset = create_hetero_data(test_indices)
 
     return train_dataset, val_dataset, test_dataset
+
