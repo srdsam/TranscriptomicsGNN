@@ -1,6 +1,3 @@
-import os
-import platform
-import torch
 import yaml
 import argparse
 import scanpy as sc
@@ -9,8 +6,10 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
-from data.data import h5ad_to_pyg_data, LightningDataset
-from model.model import HGT
+from torch_geometric.data.lightning import LightningDataset
+
+from data.data import h5ad_to_pyg_data
+from model.HGT import HGT
 
 
 def load_config(config_path):
@@ -44,29 +43,39 @@ def main(config_path):
     file = sc.read_h5ad(DATA)
 
     # Convert the dataset to PyTorch Geometric format
-    train, val, test = h5ad_to_pyg_data(file, downsample=True)
+    train_dataset, val_dataset, test_dataset = h5ad_to_pyg_data(file, downsample=True)
 
     # Create LightningDataset for training, validation, and testing
     dataset = LightningDataset(
-        train,
-        test,
-        val,
-        num_neighbors=config["data"]["num_neighbors"],
-        num_workers=config["data"]["num_workers"],
+        train_dataset,
+        test_dataset,
+        val_dataset,
+        # num_neighbors=config["data"]["num_neighbors"],
+        # num_workers=config["data"]["num_workers"],
     )
 
     # Initialize the HGT model with the specified configuration
     hidden_channels = config["model"]["hidden_channels"]
-    out_channels = len(train["cell"].y.unique())
+    out_channels = len(train_dataset["cell"].y.unique())
     num_layers = config["model"]["num_layers"]
     num_heads = config["model"]["num_heads"]
-    model = HGT(hidden_channels, out_channels, num_heads, num_layers, train.metadata())
+    model = HGT(hidden_channels, out_channels, num_heads, num_layers, train_dataset.metadata())
 
     # Set up callbacks
     callbacks = []
     if config["training"]["early_stopping"]:
         early_stopping = EarlyStopping(monitor="val_loss", patience=config["training"]["patience"])
         callbacks.append(early_stopping)
+
+    # Set up checkpoints
+    checkpoint_callback = ModelCheckpoint(
+        dirpath='checkpoints/',
+        filename='HGT-{epoch:02d}-{val_loss:.2f}',
+        save_top_k=1,
+        monitor='val_loss',
+        mode='min'
+    )
+    callbacks.append(checkpoint_callback)
 
     # Set up loggers
     wandb_logger = WandbLogger(project="graph-transcriptomics")

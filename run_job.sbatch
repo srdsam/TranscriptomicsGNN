@@ -14,10 +14,10 @@
 module load anaconda
 
 # Activate your virtual environment
-source /home/samuel.dsouza/.conda/envs/gnn
+conda activate gnn
 
 # Run your main.py with the configuration file as an argument
 python main.py --config config/config.yaml
 
 # Deactivate the virtual environment
-deactivate
+conda deactivate

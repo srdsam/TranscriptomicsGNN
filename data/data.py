@@ -1,13 +1,8 @@
 import sys
 import torch
 import numpy as np
-import pandas as pd
 import scanpy as sc
-import torch_geometric.transforms as T
 from torch_geometric.data import HeteroData
-from torch_geometric.data.lightning import LightningNodeData, LightningDataset
-from torch_geometric.utils import from_scipy_sparse_matrix
-from torch_geometric.loader import DataLoader
 
 
 def downsample_adata(adata, frac=0.1):
@@ -114,7 +109,7 @@ def h5ad_to_pyg_data(adata, downsample=False):
 
     # Downsample the dataset if requested
     if downsample:
-        adata = downsample_adata(adata, frac=0.0001)
+        adata = downsample_adata(adata, frac=0.1)
     print(f'AnnData Size (GB): {sys.getsizeof(adata) / (1024 ** 3)}')
 
     # Check if the data is normalized
@@ -147,8 +142,8 @@ def h5ad_to_pyg_data(adata, downsample=False):
 
         return data
 
-    train_data = create_hetero_data(train_indices)
-    val_data = create_hetero_data(val_indices)
-    test_data = create_hetero_data(test_indices)
+    train_dataset = create_hetero_data(train_indices)
+    val_dataset = create_hetero_data(val_indices)
+    test_dataset = create_hetero_data(test_indices)
 
-    return train_data, val_data, test_data
+    return train_dataset, val_dataset, test_dataset

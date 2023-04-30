@@ -1,2 +1,5 @@
 config/wandb.yaml
 .ipynb_checkpoints
+logs
+__pycache__
+wandb

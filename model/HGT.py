@@ -1,8 +1,9 @@
 import torch
 import torch.nn.functional as F
+import pytorch_lightning as pl
 from pytorch_lightning import LightningModule
 from torch.optim.lr_scheduler import StepLR
-from torch_geometric.nn import HeteroConv, GCNConv, SAGEConv, GATConv, Linear, HGTConv
+from torch_geometric.nn import Linear, HGTConv
 
 class HGT(pl.LightningModule):
     """
@@ -56,7 +57,7 @@ class HGT(pl.LightningModule):
             x_dict = conv(x_dict, edge_index_dict)
 
         # Apply the final linear layer to the output of the last HGTConv layer
-        return self.lin(x_dict[target])
+        return self.lin(x_dict['cell'])
 
     def training_step(self, batch, batch_idx):
         """
