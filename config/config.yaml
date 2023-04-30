@@ -1,0 +1,17 @@
+data:
+  input_path: "/hpc/projects/data_lg/samuel.dsouza/tabulaMuris/TabulaMurisBiohub.h5ad"
+  num_neighbors:
+    - 25
+    - 10
+  num_workers: 4
+  downsample: True
+
+model:
+  hidden_channels: 32
+  num_layers: 2
+  num_heads: 2
+
+training:
+  epochs: 100
+  early_stopping: True
+  patience: 10
